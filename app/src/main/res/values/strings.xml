@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GeofenceTrigger</string>
+    <string name="channel_name">Geofence Service</string>
+    <string name="channel_description">Keeps geofence monitoring active</string>
+    <string name="event_channel_name">Geofence Events</string>
+    <string name="event_channel_description">Notifications for geofence enter/exit events</string>
+</resources>
