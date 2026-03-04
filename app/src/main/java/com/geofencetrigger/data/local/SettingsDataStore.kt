@@ -30,7 +30,7 @@ class SettingsDataStore @Inject constructor(
     val settings: Flow<AppSettings> = context.dataStore.data.map { prefs ->
         AppSettings(
             webhookUrl = prefs[Keys.WEBHOOK_URL] ?: "https://macbook-pro-de-ilies.tailcdd52c.ts.net/hooks/geofence",
-            authToken = prefs[Keys.AUTH_TOKEN] ?: "ff6d8bba7c7c8b2dec4f9447f30c69e3b7d58b7b0c2b9cc8",
+            authToken = prefs[Keys.AUTH_TOKEN] ?: "",
             deviceName = prefs[Keys.DEVICE_NAME] ?: "ilies-android",
             isServiceEnabled = prefs[Keys.SERVICE_ENABLED] ?: false
         )
