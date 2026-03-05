@@ -1,19 +1,29 @@
 package com.geofencetrigger.presentation.screen.map
 
+import android.app.Application
+import android.location.Geocoder
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.geofencetrigger.domain.model.GeofenceZone
 import com.geofencetrigger.domain.repository.GeofenceZoneRepository
 import com.geofencetrigger.service.GeofenceManager
+import com.google.android.gms.maps.model.LatLng
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
+
+data class SearchResult(
+    val location: LatLng,
+    val address: String
+)
 
 data class AddZoneDialogState(
     val isVisible: Boolean = false,
@@ -25,6 +35,7 @@ data class AddZoneDialogState(
 
 @HiltViewModel
 class MapViewModel @Inject constructor(
+    private val application: Application,
     private val zoneRepository: GeofenceZoneRepository,
     private val geofenceManager: GeofenceManager
 ) : ViewModel() {
@@ -34,6 +45,45 @@ class MapViewModel @Inject constructor(
 
     private val _dialogState = MutableStateFlow(AddZoneDialogState())
     val dialogState: StateFlow<AddZoneDialogState> = _dialogState.asStateFlow()
+
+    private val _searchResult = MutableStateFlow<SearchResult?>(null)
+    val searchResult: StateFlow<SearchResult?> = _searchResult.asStateFlow()
+
+    private val _searchError = MutableStateFlow<String?>(null)
+    val searchError: StateFlow<String?> = _searchError.asStateFlow()
+
+    fun searchAddress(query: String) {
+        if (query.isBlank()) return
+        viewModelScope.launch {
+            _searchError.value = null
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    @Suppress("DEPRECATION")
+                    val addresses = Geocoder(application)
+                        .getFromLocationName(query, 1)
+                    addresses?.firstOrNull()
+                }
+                if (result != null) {
+                    _searchResult.value = SearchResult(
+                        location = LatLng(result.latitude, result.longitude),
+                        address = result.getAddressLine(0) ?: query
+                    )
+                } else {
+                    _searchError.value = "No results found for \"$query\""
+                }
+            } catch (e: Exception) {
+                _searchError.value = "Geocoder error: ${e.localizedMessage}"
+            }
+        }
+    }
+
+    fun clearSearchResult() {
+        _searchResult.value = null
+    }
+
+    fun clearSearchError() {
+        _searchError.value = null
+    }
 
     fun showAddDialog(lat: Double, lng: Double) {
         _dialogState.value = AddZoneDialogState(
